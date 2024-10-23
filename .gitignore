@@ -1,0 +1,6 @@
+*.env
+.idea/
+*gguf
+__pycache__/
+venv*/
+db_index*/*
