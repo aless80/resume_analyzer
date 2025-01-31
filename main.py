@@ -5,7 +5,7 @@ import dotenv
 
 from backend.analysis import analyze_resume
 from backend.chat import chat
-from backend.configuration import Configuration, config_llamatrace
+from backend.configuration import Configuration, config_tracing, config_cache
 from backend.pdf_ingestion import load_split_pdf
 from backend.vector_store import create_vector_store
 
@@ -17,7 +17,8 @@ JOB_DESCRIPTION = os.getenv("JOB_DESCRIPTION")
 
 def main(resume_file_path: Path = RESUME_FILE_PATH, job_description: str = JOB_DESCRIPTION):
     config = Configuration()
-    config_llamatrace(config)
+    config_tracing(config)
+    config_cache()
 
     # Create a temporary directory for the cv file
     temp_dir = Path("temp")

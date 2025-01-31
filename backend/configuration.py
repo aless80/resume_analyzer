@@ -83,7 +83,7 @@ class Configuration(BaseSettings):
         )
 
 def config_cache():
-    set_llm_cache(SQLiteCache(database_path=".langchain.db"))
+    set_llm_cache(SQLiteCache(database_path=".SQLiteCache_analysis.db"))
 
 
 def config_tracing(config: Configuration) -> None:

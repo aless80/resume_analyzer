@@ -4,3 +4,5 @@
 __pycache__/
 venv*/
 db_index*/*
+chunks*/*
+.SQLiteCache_analysis.db
