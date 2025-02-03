@@ -45,7 +45,9 @@ def main():
         chunks=chunks, vector_index_name=resume_file_path.name.removesuffix(".pdf")
     )
     # Initialize the chain to carry out a conversation
-    conversational_retrieval_chain = chat(vector_store=vector_store)
+    conversational_retrieval_chain = chat(
+        vector_store=vector_store, job_description=job_description
+    )
 
     print(
         f"{Color.BOLD}\nWelcome to CV analyzer. Type your query or type 'exit' to quit{Color.END}"
@@ -66,7 +68,7 @@ def main():
             }
             response_obj = conversational_retrieval_chain.invoke(
                 input_data,
-                config={"configurable": {"session_id": "abc123"}},  # Setting session ID
+                config={"configurable": {"session_id": "abc123"}},
             )
 
             answer_text = response_obj["answer"]
