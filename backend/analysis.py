@@ -8,7 +8,8 @@ from backend.configuration import Configuration
 def analyze_resume(full_resume, job_description, config: Configuration) -> Any:
     # Template for analyzing the resume against the job description
     template = """
-    You are an AI assistant specialized in resume analysis and recruitment. Analyze the given resume and compare it with the job description. 
+    You are an AI assistant specialized in resume analysis and recruitment. 
+    Analyze the given resume and compare it with the job description. 
     
     Example Response Structure:
     
@@ -24,7 +25,10 @@ def analyze_resume(full_resume, job_description, config: Configuration) -> Any:
     3. List of skills from the job description that are missing in the resume
     
     **Additional Comments**:
-    Additional comments about the resume and suggestions for the recruiter or HR manager.
+    Additional comments about the resume and suggestions for the applicant.
+    
+    **Grammar**:
+    Detect the language and show any grammatical error.
 
     Resume: ```{resume}```
     Job Description: ```{job_description}```
