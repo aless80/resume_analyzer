@@ -1,7 +1,5 @@
-import os
 from pathlib import Path
-
-import dotenv
+from typing import Any, Dict
 
 from backend.analysis import analyze_resume
 from backend.chat import chat
@@ -9,18 +7,15 @@ from backend.configuration import Configuration, config_cache, config_tracing
 from backend.pdf_ingestion import create_or_load_chunks
 from backend.vector_store import create_or_load_vector_store
 
-dotenv.load_dotenv()
 
-RESUME_FILE_PATH = Path(os.getenv("CV_PATH"))
-JOB_DESCRIPTION = os.getenv("JOB_DESCRIPTION")
+def main():
 
-
-def main(
-    resume_file_path: Path = RESUME_FILE_PATH, job_description: str = JOB_DESCRIPTION
-):
     config = Configuration()
     config_tracing(config)
     config_cache()
+
+    resume_file_path = config.cv_path
+    job_description = config.job_description
 
     # Create a temporary directory for the cv file
     temp_dir = Path("temp")
@@ -55,7 +50,7 @@ def main(
     print(
         f"{Color.BOLD}\nWelcome to CV analyzer. Type your query or type 'exit' to quit{Color.END}"
     )
-    messages = []
+    messages: Dict[str, Any] = []
     while True:
         query = input(f"{Color.BOLD}User: {Color.END}")
 

@@ -28,6 +28,8 @@ def create_or_load_vector_store(chunks: List[Document], vector_index_name: Path)
             persist_directory=str(vector_index_path),
         )
     if vector_store._collection.count() == 0:
-        raise f"No Documents found in loaded vector store: {vector_index_name}, {COLLECTION_NAME}"
+        raise IOError(
+            f"No Documents found in loaded vector store: {vector_index_name}, {COLLECTION_NAME}"
+        )
 
     return vector_store

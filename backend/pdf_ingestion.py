@@ -12,8 +12,8 @@ def create_or_load_chunks(file_path: Path, config: Configuration):
     chunks_out_path = (PATH_CHUNKS / file_path.name).with_suffix(".pkl")
     if 1 or not chunks_out_path.exists():
 
-        loader0 = UnstructuredPDFLoader(file_path, mode="elements", strategy="fast")
-        chunks = loader0.load()
+        loader = UnstructuredPDFLoader(file_path, mode="elements", strategy="fast")
+        chunks = loader.load()
         # Filter metadata to successfully process into DB
         chunks = filter_complex_metadata(chunks)
 

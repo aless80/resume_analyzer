@@ -4,8 +4,10 @@ from pathlib import Path
 from typing import Any
 
 from langchain_community.cache import SQLiteCache
+from langchain_core.embeddings import Embeddings
 from langchain_core.globals import set_llm_cache
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_openai.chat_models.base import BaseChatOpenAI
 from openinference.instrumentation.langchain import LangChainInstrumentor
 from phoenix.otel import register
 from pydantic import Field, model_validator
@@ -73,14 +75,15 @@ class Configuration(BaseSettings):
                 return True
 
     @cached_property
-    def llm(self) -> bool:
+    def llm(self) -> BaseChatOpenAI:
         return ChatOpenAI(model_name=self.llm_openai_model, api_key=self.openai_api_key)
 
     @cached_property
-    def embeddings(self) -> bool:
+    def embeddings(self) -> Embeddings:
         return OpenAIEmbeddings(
             model=self.embeddings_openai_model, api_key=self.openai_api_key
         )
+
 
 def config_cache():
     set_llm_cache(SQLiteCache(database_path=".SQLiteCache_analysis.db"))

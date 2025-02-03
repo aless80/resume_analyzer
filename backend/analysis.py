@@ -1,9 +1,11 @@
+from typing import Any
+
 from langchain_core.prompts import PromptTemplate
 
 from backend.configuration import Configuration
 
 
-def analyze_resume(full_resume, job_description, config: Configuration):
+def analyze_resume(full_resume, job_description, config: Configuration) -> Any:
     # Template for analyzing the resume against the job description
     template = """
     You are an AI assistant specialized in resume analysis and recruitment. Analyze the given resume and compare it with the job description. 
