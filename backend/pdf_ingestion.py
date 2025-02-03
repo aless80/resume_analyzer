@@ -1,27 +1,29 @@
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+from pathlib import Path
 
-from backend.configuration import Configuration
+from langchain_community.document_loaders import UnstructuredPDFLoader
+from langchain_community.vectorstores.utils import filter_complex_metadata
+
+from backend.configuration import PATH_CHUNKS, Configuration
+from backend.pickle_utils import load_from_pickle, store_to_pickle
 
 
-# Load and split the PDF document and return the documents and text chunks
-def load_split_pdf(file_path, config: Configuration):
-    # Load the PDF document and split it into chunks
-    loader = PyPDFLoader(file_path)  # Initialize the PDF loader with the file path
-    documents = loader.load()  # Load the PDF document
+# Ingest the resume PDF into Documents
+def create_or_load_chunks(file_path: Path, config: Configuration):
+    chunks_out_path = (PATH_CHUNKS / file_path.name).with_suffix(".pkl")
+    if 1 or not chunks_out_path.exists():
 
-    # Initialize the recursive character text splitter
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=config.chunk_size,
-        chunk_overlap=config.chunk_overlap,
-        separators=[
-            "\n\n",
-            "\n",
-            " ",
-            "",
-        ],  # Define resume-specific separators for splitting
-    )
+        loader0 = UnstructuredPDFLoader(file_path, mode="elements", strategy="fast")
+        chunks = loader0.load()
+        # Filter metadata to successfully process into DB
+        chunks = filter_complex_metadata(chunks)
 
-    # Split the loaded documents into chunks
-    chunks = text_splitter.split_documents(documents)
-    return documents, chunks
+        if not chunks_out_path.exists():
+            chunks_out_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Store the chunks
+        chunks_out_path.parent.mkdir(parents=True, exist_ok=True)
+        store_to_pickle(chunks, chunks_out_path)
+    else:
+        chunks = load_from_pickle(chunks_out_path)
+
+    return chunks

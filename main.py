@@ -5,9 +5,9 @@ import dotenv
 
 from backend.analysis import analyze_resume
 from backend.chat import chat
-from backend.configuration import Configuration, config_tracing, config_cache
-from backend.pdf_ingestion import load_split_pdf
-from backend.vector_store import create_vector_store
+from backend.configuration import Configuration, config_cache, config_tracing
+from backend.pdf_ingestion import create_or_load_chunks
+from backend.vector_store import create_or_load_vector_store
 
 dotenv.load_dotenv()
 
@@ -15,7 +15,9 @@ RESUME_FILE_PATH = Path(os.getenv("CV_PATH"))
 JOB_DESCRIPTION = os.getenv("JOB_DESCRIPTION")
 
 
-def main(resume_file_path: Path = RESUME_FILE_PATH, job_description: str = JOB_DESCRIPTION):
+def main(
+    resume_file_path: Path = RESUME_FILE_PATH, job_description: str = JOB_DESCRIPTION
+):
     config = Configuration()
     config_tracing(config)
     config_cache()
@@ -29,14 +31,14 @@ def main(resume_file_path: Path = RESUME_FILE_PATH, job_description: str = JOB_D
     #     f.write(resume_file_path.getbuffer())
 
     # Load and split the PDF file into documents and chunks
-    resume_docs, resume_chunks = load_split_pdf(resume_file_path, config=config)
+    chunks = create_or_load_chunks(resume_file_path, config=config)
 
     # Remove the temporary directory and its contents
     # shutil.rmtree(temp_dir)
 
     # Button to begin resume analysis
     # Combine all document contents into one text string for analysis
-    full_resume = " ".join([doc.page_content for doc in resume_docs])
+    full_resume = " ".join([doc.page_content for doc in chunks])
 
     # Analyze the resume
     response_analysis = analyze_resume(full_resume, job_description, config=config)
@@ -44,7 +46,9 @@ def main(resume_file_path: Path = RESUME_FILE_PATH, job_description: str = JOB_D
 
     ### Chat
     # Create a vector store from the resume chunks
-    vector_store = create_vector_store(chunks=resume_chunks, vector_index_name=resume_file_path.name)
+    vector_store = create_or_load_vector_store(
+        chunks=chunks, vector_index_name=resume_file_path.name.removesuffix(".pdf")
+    )
     # Initialize the chain to carry out a conversation
     conversational_retrieval_chain = chat(vector_store=vector_store)
 
@@ -65,9 +69,10 @@ def main(resume_file_path: Path = RESUME_FILE_PATH, job_description: str = JOB_D
                 "input": query,
                 "chat_history": messages,
             }
-            response_obj = conversational_retrieval_chain.invoke(input_data, config={
-                "configurable": {"session_id": "abc123"}  # Setting session ID
-            })
+            response_obj = conversational_retrieval_chain.invoke(
+                input_data,
+                config={"configurable": {"session_id": "abc123"}},  # Setting session ID
+            )
 
             answer_text = response_obj["answer"]
             print(

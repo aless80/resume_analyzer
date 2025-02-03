@@ -5,8 +5,8 @@ import streamlit as st
 
 from backend.analysis import analyze_resume
 from backend.configuration import Configuration
-from backend.pdf_ingestion import load_split_pdf
-from backend.vector_store import create_vector_store
+from backend.pdf_ingestion import create_or_load_chunks
+from backend.vector_store import create_or_load_vector_store
 
 config = Configuration()
 
@@ -48,11 +48,11 @@ def render_main_app():
 
             # Load and split the PDF file into documents and chunks
             resume_file_path = Path("temp") / resume_file.name
-            resume_docs, resume_chunks = load_split_pdf(resume_file_path)
+            chunks = create_or_load_chunks(resume_file_path, config=config)
 
             # Create a vector store from the resume chunks
-            vector_store = create_vector_store(
-                chunks=resume_chunks, vector_index_name=resume_file.name
+            vector_store = create_or_load_vector_store(
+                chunks=chunks, vector_index_name=resume_file.name
             )
             st.session_state.vector_store = (
                 vector_store  # Store vector store in session state
@@ -64,7 +64,7 @@ def render_main_app():
             # Button to begin resume analysis
             if st.button("Analyze Resume", help="Click to analyze the resume"):
                 # Combine all document contents into one text string for analysis
-                full_resume = " ".join([doc.page_content for doc in resume_docs])
+                full_resume = " ".join([doc.page_content for doc in chunks])
                 # Analyze the resume
                 analysis = analyze_resume(full_resume, job_description, config=config)
                 # Store analysis in session state
