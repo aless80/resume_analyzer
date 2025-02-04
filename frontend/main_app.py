@@ -38,6 +38,9 @@ def render_main_app():
         )
 
         if resume_file and job_description:  # Check if both inputs are provided
+            # Save the job descripion in state
+            st.session_state.job_description = job_description
+
             # Create a temporary directory if it doesn't exist
             temp_dir = Path("temp")
             temp_dir.mkdir(parents=True, exist_ok=True)
@@ -66,9 +69,11 @@ def render_main_app():
                 # Combine all document contents into one text string for analysis
                 full_resume = " ".join([doc.page_content for doc in chunks])
                 # Analyze the resume
-                analysis = analyze_resume(full_resume, job_description, config=config)
+                analysis = analyze_resume(
+                    full_resume, st.session_state.job_description, config=config
+                )
                 # Store analysis in session state
-                st.session_state.analysis = analysis
+                st.session_state.analysis = analysis.content
         else:
             st.info("Please upload a resume and enter a job description to begin.")
 
@@ -83,7 +88,12 @@ def render_main_app():
             "Do you want to find out the compatibility between a resume and a job description? So what are you waiting for?"
         )
 
-        todo = ["Upload a Resume", "Enter a Job Description", "Click on Analyze Resume"]
+        todo = [
+            "Upload a Resume",
+            "Enter a Job Description",
+            "Click on the Analyze Resume button",
+            "Chat with the resume and Job Description",
+        ]
         st.markdown(
             "\n".join([f"##### {i + 1}. {item}" for i, item in enumerate(todo)])
         )

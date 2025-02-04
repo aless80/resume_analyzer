@@ -31,9 +31,11 @@ def render_chat_interface():
         st.session_state.messages = []  # Initialize messages in session state
 
     # Check if the vector store is available
-    if "vector_store" in st.session_state:
+    if "vector_store" in st.session_state and "job_description" in st.session_state:
         # Setting up the vector store as retriever
-        conversational_retrieval_chain = chat(st.session_state.vector_store)
+        conversational_retrieval_chain = chat(
+            st.session_state.vector_store, st.session_state.job_description
+        )
 
         # Create a container for messages with bottom padding for input space
         chat_container = st.container()
