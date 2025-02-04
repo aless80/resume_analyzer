@@ -73,7 +73,7 @@ def render_main_app():
                     full_resume, st.session_state.job_description, config=config
                 )
                 # Store analysis in session state
-                st.session_state.analysis = analysis.content
+                st.session_state.analysis = analysis
         else:
             st.info("Please upload a resume and enter a job description to begin.")
 

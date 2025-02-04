@@ -37,7 +37,7 @@ def main():
 
     # Analyze the resume
     response_analysis = analyze_resume(full_resume, job_description, config=config)
-    print(response_analysis.content)
+    print(response_analysis)
 
     ### Chat
     # Create a vector store from the resume chunks
