@@ -18,7 +18,7 @@ class State(TypedDict):
 
 
 def analyze_resume(
-    full_resume: str, job_description: str, config: Configuration
+        full_resume: str, job_description: str, config: Configuration
 ) -> str:
     # Build workflow
     parallel_builder = StateGraph(State)
@@ -30,8 +30,10 @@ def analyze_resume(
     parallel_builder.add_node("aggregator", aggregator)
 
     # Add edges to connect nodes
-    parallel_builder.add_edge(START, "call_llm_skills_analysis")
+    # Start ─┬─ call_llm_grammatical_analysis ───────────────────────┬── aggregator ── End
+    #        └─ call_llm_skills_analysis ─────── aggregator_skills ──┘
     parallel_builder.add_edge(START, "call_llm_grammatical_analysis")
+    parallel_builder.add_edge(START, "call_llm_skills_analysis")
     parallel_builder.add_edge("call_llm_skills_analysis", "aggregator")
     parallel_builder.add_edge("call_llm_grammatical_analysis", "aggregator")
     parallel_builder.add_edge("aggregator", END)
@@ -49,7 +51,7 @@ def analyze_resume(
     return state["combined_output"]
 
 
-def call_llm_skills_analysis(state: State, config: Configuration):
+def call_llm_skills_analysis(state: State):
     # Template for analyzing the resume against the job description
     template_analysis = """
     You are an AI assistant specialized in resume analysis and recruitment. 
@@ -65,11 +67,14 @@ def call_llm_skills_analysis(state: State, config: Configuration):
     **DETAILED ANALYSIS**:
     Provide a detailed analysis about:
     1. Overall match percentage between the resume and job description
-    2. List of skills from the job description that match the resume
-    3. List of skills from the job description that are missing in the resume
+    2. Comma-delimited list of skills from the job description that match the resume
+    3. Comma-delimited list of skills from the job description that are missing in the resume
     
     **Additional Comments**:
-    Additional comments about the resume and suggestions for the applicant.
+    Hard skills: comment on most important hard skills from the job description that are missing in the resume
+    Soft skills: comment on most important soft skills from the job description that are missing in the resume
+    Other tips
+    Notify if the languages of resume and job description are not the same.
     
     Resume: ```{resume}```
     Job Description: ```{job_description}```
@@ -79,11 +84,7 @@ def call_llm_skills_analysis(state: State, config: Configuration):
     prompt_analysis = PromptTemplate(
         input_variables=["resume", "job_description"], template=template_analysis
     )
-
-    # Create a chain combining the prompt and the language model
     chain_analysis = prompt_analysis | state["llm"]
-
-    # Invoke the chain with input data
     response_analysis = chain_analysis.invoke(
         {"resume": state["full_resume"], "job_description": state["job_description"]}
     )
@@ -91,12 +92,13 @@ def call_llm_skills_analysis(state: State, config: Configuration):
     return {"skills_analysis": response_analysis.content}
 
 
-def call_llm_grammatical_analysis(state: State, config: Configuration):
+def call_llm_grammatical_analysis(state: State):
     template_grammar = """
     You are an AI assistant specialized in English and Norwegian languages. 
     Detect the language in the given resume, then detect any grammatical error.
     
     Example Response Structure:
+    
     The resume is written in English/Norwegian and I could not detect significant grammatical errors.
 
     Resume: ```{resume}```
@@ -104,13 +106,9 @@ def call_llm_grammatical_analysis(state: State, config: Configuration):
     prompt_grammar = PromptTemplate(
         input_variables=["resume"], template=template_grammar
     )
-    # Create a chain combining the prompt and the language model
     chain_grammar = prompt_grammar | state["llm"]
-
-    # Invoke the chain with input data
     response_grammar = chain_grammar.invoke({"resume": state["full_resume"]})
 
-    # return response_grammar
     return {"grammar_analysis": response_grammar.content}
 
 

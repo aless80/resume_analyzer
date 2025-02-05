@@ -4,7 +4,10 @@ It includes two main tasks: analysis of a resume based on a job description, and
 implementation of a conversational retrieval chain to chat with the resume and job description.
 
 The analysis task checks for grammatical issues, compares and evaluates the skills present in the resume 
-with the job description, and suggestions to the applicant.   
+with the job description, and suggestions to the applicant. 
+This analysis is parallelized using a Langgraph workflow, where the grammatical check is separated 
+from the rest: ![Parallel Workflow][wflow1]
+
 
 The chat functionality is and LLM augmented with retrieval capabilities on the resume and 
 memory about the job description.
