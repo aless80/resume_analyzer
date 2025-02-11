@@ -3,15 +3,27 @@ from typing import List
 
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
+from langchain_core.vectorstores import VectorStore
 
 from backend.configuration import DB_INDEX, Configuration
 
 COLLECTION_NAME = "resume_collection"
 
-config = Configuration()
 
+def create_or_load_vector_store(
+    chunks: List[Document], vector_index_name: Path, config: Configuration
+) -> VectorStore:
+    """Return a vector store index on the resume
+    If the path to vector store exists the vector store is loaded from there, otherwise it will be created
 
-def create_or_load_vector_store(chunks: List[Document], vector_index_name: Path):
+    Args:
+        chunks: Document objects from resume
+        vector_index_name: Path to vector store index
+        config: Configuration object (optional)
+
+    Returns:
+        Vector store
+    """
     # Store embeddings into the vector store
     vector_index_path = DB_INDEX / vector_index_name
     if not vector_index_path.exists():

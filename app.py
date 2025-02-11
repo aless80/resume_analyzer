@@ -1,11 +1,16 @@
 import streamlit as st
-from frontend.main_app import render_main_app
+
+from backend.configuration import Configuration
 from frontend.chat_interface import render_chat_interface
+from frontend.main_app import render_main_app
 
 # Set the page layout to wide for better visual presentation
 st.set_page_config(layout="wide")
 
+
 def main():
+    config = Configuration()
+
     st.title("Resume Analyzer")
 
     with st.sidebar:
@@ -16,11 +21,12 @@ def main():
 
     with col1:
         # Render the main app in the larger column
-        render_main_app()
+        render_main_app(config=config)
 
     with col2:
         # Render the chat interface in the smaller column
-        render_chat_interface()
+        render_chat_interface(config=config)
+
 
 # Script execution through the 'main' function
 if __name__ == "__main__":

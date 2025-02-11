@@ -5,13 +5,24 @@ from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnableWithMessageHistory
+from langchain_core.vectorstores import VectorStore
 
 from backend.configuration import Configuration
 
 
-def chat(vector_store, job_description: str = "") -> RunnableWithMessageHistory:
-    config = Configuration()
+def chat(
+    vector_store: VectorStore, job_description: str, config: Configuration
+) -> RunnableWithMessageHistory:
+    """Create a runnable chain for chatting with the resume and job description
 
+    Args:
+        vector_store: Vector store
+        job_description: Job description
+        config: Configuration object (optional)
+
+    Returns:
+        Runnable chain
+    """
     retriever = vector_store.as_retriever(
         search_type="mmr",  # Uses Maximum Marginal Relevance for search
         search_kwargs={"k": config.similarity_top_k},
@@ -63,7 +74,7 @@ def chat(vector_store, job_description: str = "") -> RunnableWithMessageHistory:
     # Setting up the question-answering chain
     question_answer_chain = create_stuff_documents_chain(config.llm, qa_prompt)
     retrieval_chain = create_retrieval_chain(
-        history_aware_retriever, question_answer_chain
+        retriever=history_aware_retriever, combine_docs_chain=question_answer_chain
     )
 
     # Chat history management using a dictionary

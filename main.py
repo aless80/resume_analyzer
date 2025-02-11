@@ -42,11 +42,13 @@ def main():
     ### Chat
     # Create a vector store from the resume chunks
     vector_store = create_or_load_vector_store(
-        chunks=chunks, vector_index_name=resume_file_path.name.removesuffix(".pdf")
+        chunks=chunks,
+        vector_index_name=resume_file_path.name.removesuffix(".pdf"),
+        config=config,
     )
     # Initialize the chain to carry out a conversation
     conversational_retrieval_chain = chat(
-        vector_store=vector_store, job_description=job_description
+        vector_store=vector_store, job_description=job_description, config=config
     )
 
     print(
