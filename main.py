@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 from backend.analysis import analyze_resume
-from backend.chat import chat
+from backend.chat import create_runnable_resume_chain, resume_chat_workflow
 from backend.configuration import Configuration, config_cache, config_tracing
 from backend.pdf_ingestion import create_or_load_chunks
 from backend.vector_store import create_or_load_vector_store
@@ -37,16 +37,14 @@ def main():
 
     # Analyze the resume
     response_analysis = analyze_resume(full_resume, job_description, config=config)
-    print(response_analysis.content)
+    print(response_analysis)
 
     ### Chat
     # Create a vector store from the resume chunks
     vector_store = create_or_load_vector_store(
-        chunks=chunks, vector_index_name=resume_file_path.name.removesuffix(".pdf")
-    )
-    # Initialize the chain to carry out a conversation
-    conversational_retrieval_chain = chat(
-        vector_store=vector_store, job_description=job_description
+        chunks=chunks,
+        vector_index_name=resume_file_path.name.removesuffix(".pdf"),
+        config=config,
     )
 
     print(
@@ -62,16 +60,13 @@ def main():
             break
         else:
             # Prepare input data for the conversational chain
-            input_data = {
-                "input": query,
-                "chat_history": messages,
-            }
-            response_obj = conversational_retrieval_chain.invoke(
-                input_data,
-                config={"configurable": {"session_id": "abc123"}},
+            answer_text = resume_chat_workflow(
+                vector_store=vector_store,
+                job_description=job_description,
+                query=query,
+                messages=messages,
             )
 
-            answer_text = response_obj["answer"]
             print(
                 f"{Color.BOLD}Assistant: {answer_text}{Color.END}",
             )

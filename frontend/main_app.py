@@ -8,11 +8,9 @@ from backend.configuration import Configuration
 from backend.pdf_ingestion import create_or_load_chunks
 from backend.vector_store import create_or_load_vector_store
 
-config = Configuration()
-
 
 # Main application including "Upload Resume" and "Resume Analysis" sections
-def render_main_app():
+def render_main_app(config: Configuration):
     # Apply custom CSS to adjust the sidebar width
     st.markdown(
         """
@@ -55,7 +53,7 @@ def render_main_app():
 
             # Create a vector store from the resume chunks
             vector_store = create_or_load_vector_store(
-                chunks=chunks, vector_index_name=resume_file.name
+                chunks=chunks, vector_index_name=resume_file.name, config=config
             )
             st.session_state.vector_store = (
                 vector_store  # Store vector store in session state
@@ -73,7 +71,7 @@ def render_main_app():
                     full_resume, st.session_state.job_description, config=config
                 )
                 # Store analysis in session state
-                st.session_state.analysis = analysis.content
+                st.session_state.analysis = analysis
         else:
             st.info("Please upload a resume and enter a job description to begin.")
 
