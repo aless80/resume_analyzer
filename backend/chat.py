@@ -21,7 +21,7 @@ def create_runnable_resume_chain(
     vector_store: VectorStore,
     job_description: str,
     config: Configuration,
-    similarity_top_k: int = 6,
+    similarity_top_k: int = 4,
 ) -> RunnableWithMessageHistory:
     """Create a runnable chain for chatting with the resume and job description
 
@@ -35,7 +35,10 @@ def create_runnable_resume_chain(
     """
     retriever = vector_store.as_retriever(
         search_type="mmr",  # Maximum Marginal Relevance for search
-        search_kwargs={"k": similarity_top_k},
+        search_kwargs={
+            "k": similarity_top_k,
+            "fetch_k": min(20, vector_store._collection.count()),
+        },
     )
 
     # Chat logic setup for contextualizing user questions
@@ -133,7 +136,8 @@ evaluator = config.llm.with_structured_output(Feedback)
 
 def llm_call_generator(state: State):
     """Initialize the chain to carry out a conversation, then generate a response"""
-    similarity_top_k = config.similarity_top_k + (state["attempt"] - 1) * 4
+    similarity_top_k = config.similarity_top_k + (state["attempt"] - 1) * 2
+    similarity_top_k = min(similarity_top_k, state["vector_store"]._collection.count())
     if state["attempt"] > 1:
         print(
             f"Assistant: I will try a new query with {similarity_top_k} retrieved documents"

@@ -43,7 +43,7 @@ class Configuration(BaseSettings):
         20, description="Number of overlapping characters between chunks"
     )
     similarity_top_k: int = Field(
-        5, description="Retriever's final number of returned nodes"
+        4, description="Retriever's final number of returned nodes"
     )
 
     # Input for development purposes
