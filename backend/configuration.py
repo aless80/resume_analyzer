@@ -53,9 +53,23 @@ class Configuration(BaseSettings):
     @model_validator(mode="before")
     @classmethod
     def validate_cv_path(cls, data: Any) -> Any:
-        cv_path = Path(data.get("cv_path", None))
-        if cv_path is not None and not cv_path.exists():
+        cv_path = data.get("cv_path", None)
+        if cv_path is not None:
+            cv_path = Path(cv_path)
+        else:
+            cv_path = Path(input("Type the full path of the resume"))
+            data["cv_path"] = cv_path
+        if not cv_path.exists():
             raise ValueError(f"{cv_path}: CV does not exist")
+
+        return data
+
+    @model_validator(mode="before")
+    @classmethod
+    def validate_job_description(cls, data: Any) -> Any:
+        job_description = data.get("job_description", "")
+        if job_description == "":
+            data["job_description"] = input("Type the job description")
 
         return data
 
