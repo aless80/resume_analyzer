@@ -26,7 +26,7 @@ def main():
     #     f.write(resume_file_path.getbuffer())
 
     # Load and split the PDF file into documents and chunks
-    chunks = create_or_load_chunks(resume_file_path, config=config)
+    chunks = create_or_load_chunks(resume_file_path)
 
     # Remove the temporary directory and its contents
     # shutil.rmtree(temp_dir)

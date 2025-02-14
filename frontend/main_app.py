@@ -49,7 +49,7 @@ def render_main_app(config: Configuration):
 
             # Load and split the PDF file into documents and chunks
             resume_file_path = Path("temp") / resume_file.name
-            chunks = create_or_load_chunks(resume_file_path, config=config)
+            chunks = create_or_load_chunks(resume_file_path)
 
             # Create a vector store from the resume chunks
             vector_store = create_or_load_vector_store(
