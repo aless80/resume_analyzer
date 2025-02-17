@@ -4,17 +4,19 @@ It includes two main tasks: analysis of a resume based on a job description, and
 implementation of a conversational retrieval chain to chat with the resume and job description.
 
 The analysis task checks for grammatical issues, compares and evaluates the skills present in the resume 
-with the job description, and suggestions to the applicant. 
-This analysis is parallelized using a Langgraph workflow, where the grammatical check is separated 
-from the rest: ![Parallel Workflow](parallel_workflow.png)
+with the job description, and provides suggestions to the applicant. 
+This analysis is parallelized using a LangGraph workflow, where the grammatical check is separated 
+from the rest: 
 
+<img src="parallel_workflow.png" alt="Parallel Workflow" width="300"/>
 
-The chat functionality is and LLM augmented with retrieval capabilities on the resume and 
-memory about the job description. It uses a Evaluator-Optimizer workflow to retrieve more 
+The chat functionality is a LLM augmented with retrieval capabilities on the resume and 
+memory containing the job description. It uses a Evaluator-Optimizer workflow to retrieve more 
 text documents from the resume: 
 
-![Evaluator-Optimizer workflow](workflow_evaluator_optimizer.png)
+<img src="workflow_evaluator_optimizer.png" alt="Evaluator-Optimizer workflow" width="200"/>
 
+## Installation and running
 Install two Linux packages, then use pip:
 ```
 apt-get install poppler-utils tesseract-ocr
