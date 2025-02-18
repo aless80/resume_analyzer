@@ -8,8 +8,6 @@ from langchain_core.embeddings import Embeddings
 from langchain_core.globals import set_llm_cache
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_openai.chat_models.base import BaseChatOpenAI
-from openinference.instrumentation.langchain import LangChainInstrumentor
-from phoenix.otel import register
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -30,11 +28,9 @@ class Configuration(BaseSettings):
 
     # API keys
     openai_api_key: str = Field("", description="OpenAI api key")
-    arize_api_key: str = Field(
-        "", description="API Key with hosting at Phoenix Arize AI"
-    )
-    arize_project: str = Field(
-        "", description="Project name in Phoenix Arize AI. If empty disable tracing"
+    langsmith_api_key: str = Field("", description="LangSmith API Key")
+    langsmith_project: str = Field(
+        "", description="Project name in LangSmith. If empty disable tracing"
     )
 
     # Parameters
@@ -75,15 +71,13 @@ class Configuration(BaseSettings):
 
     @property
     def is_tracing(self) -> bool:
-        if self.arize_api_key == "":
-            if self.arize_project == "":
+        if self.langsmith_api_key == "":
+            if self.langsmith_project == "":
                 return False
             else:
-                raise ValueError(
-                    "Project at Phoenix Arize AI is set but the api key is empty"
-                )
+                raise ValueError("Project at LangSmith is set but the api key is empty")
         else:
-            if self.arize_project == "":
+            if self.langsmith_project == "":
                 return False
             else:
                 return True
@@ -98,20 +92,17 @@ class Configuration(BaseSettings):
             model=self.embeddings_openai_model, api_key=self.openai_api_key
         )
 
+    @model_validator(mode="after")
+    def set_tracing_env_vars(self):
+        if self.is_tracing:
+            os.environ["LANGSMITH_API_KEY"] = self.langsmith_api_key
+            os.environ["LANGSMITH_TRACING"] = "true"
+
+        return self
+
 
 def config_cache(on: bool = True) -> None:
     if on:
         set_llm_cache(SQLiteCache(database_path=".SQLiteCache_analysis.db"))
     else:
         set_llm_cache(None)
-
-
-def config_tracing(config: Configuration) -> None:
-    if config.is_tracing:
-        os.environ["OTEL_EXPORTER_OTLP_HEADERS"] = config.arize_api_key
-        os.environ["PHOENIX_CLIENT_HEADERS"] = config.arize_api_key
-        os.environ["PHOENIX_COLLECTOR_ENDPOINT"] = "https://app.phoenix.arize.com"
-
-        tracer_provider = register(project_name=config.arize_project)
-
-        LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
