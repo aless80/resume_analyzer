@@ -2,8 +2,8 @@ from pathlib import Path
 from typing import Any, Dict
 
 from backend.analysis import analyze_resume
-from backend.chat import create_runnable_resume_chain, resume_chat_workflow
-from backend.configuration import Configuration, config_cache, config_tracing
+from backend.chat import resume_chat_workflow
+from backend.configuration import Configuration, config_cache
 from backend.pdf_ingestion import create_or_load_chunks
 from backend.vector_store import create_or_load_vector_store
 
@@ -11,7 +11,6 @@ from backend.vector_store import create_or_load_vector_store
 def main():
 
     config = Configuration()
-    config_tracing(config)
     config_cache()
 
     resume_file_path = config.cv_path
@@ -21,15 +20,8 @@ def main():
     temp_dir = Path("temp")
     temp_dir.mkdir(parents=True, exist_ok=True)
 
-    # Save the uploaded file to the temporary directory
-    # with open(temp_dir / resume_file_path, "wb") as f:
-    #     f.write(resume_file_path.getbuffer())
-
     # Load and split the PDF file into documents and chunks
     chunks = create_or_load_chunks(resume_file_path)
-
-    # Remove the temporary directory and its contents
-    # shutil.rmtree(temp_dir)
 
     # Button to begin resume analysis
     # Combine all document contents into one text string for analysis

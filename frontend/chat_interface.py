@@ -1,6 +1,6 @@
 import streamlit as st
 
-from backend.chat import create_runnable_resume_chain
+from backend.chat import create_runnable_resume_chain, resume_chat_workflow
 from backend.configuration import Configuration
 
 
@@ -33,13 +33,14 @@ def render_chat_interface(config: Configuration):
 
     # Check if the vector store is available
     if "vector_store" in st.session_state and "job_description" in st.session_state:
+
         # Setting up the vector store as retriever
-        conversational_retrieval_chain = create_runnable_resume_chain(
-            st.session_state.vector_store,
-            st.session_state.job_description,
-            config=config,
-            similarity_top_k=config.similarity_top_k,
-        )
+        # conversational_retrieval_chain = create_runnable_resume_chain(
+        #     st.session_state.vector_store,
+        #     st.session_state.job_description,
+        #     config=config,
+        #     similarity_top_k=config.similarity_top_k,
+        # )
 
         # Create a container for messages with bottom padding for input space
         chat_container = st.container()
@@ -67,20 +68,12 @@ def render_chat_interface(config: Configuration):
                     st.markdown(prompt)  # Display user input
 
                 with st.chat_message("assistant"):
-                    # Prepare input data for the conversational chain
-                    input_data = {
-                        "input": prompt,
-                        "chat_history": st.session_state.messages,
-                    }
-                    response = conversational_retrieval_chain.invoke(
-                        input_data,
-                        config={
-                            "configurable": {
-                                "session_id": "abc123"
-                            }  # Setting session ID
-                        },
+                    answer_text = resume_chat_workflow(
+                        vector_store=st.session_state.vector_store,
+                        job_description=st.session_state.job_description,
+                        query=prompt,
+                        messages=st.session_state.messages,
                     )
-                    answer_text = response["answer"]
                     st.markdown(answer_text)
 
             st.session_state.messages.append(

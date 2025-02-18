@@ -10,6 +10,7 @@ from langchain_core.runnables import RunnableWithMessageHistory
 from langchain_core.vectorstores import VectorStore
 from langgraph.constants import END, START
 from langgraph.graph import StateGraph
+from langsmith import traceable
 from pydantic import BaseModel, Field
 
 from backend.configuration import Configuration, config_cache
@@ -190,6 +191,11 @@ def route_response(state: State):
         )
 
 
+@traceable(
+    run_type="llm",
+    name="Resume Analyzer Decorator",
+    project_name=config.langsmith_project,
+)
 def resume_chat_workflow(
     vector_store: VectorStore,
     job_description: str,
