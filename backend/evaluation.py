@@ -1,7 +1,8 @@
 from functools import partial
-from typing import Dict
+from typing import Annotated, Dict, TypedDict
 
 from langsmith import Client
+from langsmith.schemas import Dataset
 
 from backend.chat import resume_chat_workflow
 from backend.configuration import Configuration, config_cache
@@ -50,7 +51,7 @@ def add_test_cases(
     inputs: list,
     outputs: list,
     description: str = "",
-):
+) -> Dataset:
     # Check if dataset already exist
     if langsmith_client.has_dataset(dataset_name=dataset_name):
         print("Loading dataset from LangSmith")
@@ -80,25 +81,36 @@ def add_test_cases(
     return dataset
 
 
+class CorrectnessGrade(TypedDict):
+    """Grade output schema"""
+
+    # NB: place explanation first to force the model to reason about the score
+    explanation: Annotated[str, ..., "Explain your reasoning for the score"]
+    correct: Annotated[bool, ..., "True if the answer is correct, False otherwise."]
+
+
 def correctness(inputs: dict, outputs: dict, reference_outputs: dict) -> bool:
+    """An evaluator for answer accuracy"""
     eval_instructions = "You are an expert recruiter specialized in matching jobs with resumes and answering questions about them."
     user_content = (
-        f"You are grading the following question:\n{inputs['question']})\n"
-        f"Here is the real answer:\n{reference_outputs['answer']}\n"
-        f"You are grading the following predicted answer:\n{outputs['response']}\n"
-        "Respond with CORRECT or INCORRECT:\n"
+        f"QUESTION: {inputs['question']}\n"
+        f"GROUND TRUTH ANSWER: {reference_outputs['answer']}\n"
+        f"ANSWER: {outputs['response']}"
     )
-    evaluation = openai_client.invoke(
-        input=[
+    # Run evaluator
+    grader_llm = config.llm.with_structured_output(
+        CorrectnessGrade, method="json_schema", strict=True
+    )
+    evaluation = grader_llm.invoke(
+        [
             {"role": "system", "content": eval_instructions},
             {"role": "user", "content": user_content},
-        ],
-    ).content
+        ]
+    )
+    return evaluation["correct"]  # type: ignore
 
-    return evaluation == "CORRECT"
 
-
-def ls_target(inputs: str) -> Dict[str, str]:
+def ls_target(inputs: Dict[str, str]) -> Dict[str, str]:
     """Map the dataset's input keys to the function we want to call, and
     map the output of the function to the expected output key"""
     part = partial(
@@ -112,7 +124,7 @@ def ls_target(inputs: str) -> Dict[str, str]:
 def main():
     ls_client = Client()
     dataset_name = "QA Example"
-    # Add any experiment to the dataset
+    # Add any new experiment to the dataset
     dataset = add_test_cases(
         langsmith_client=ls_client,
         dataset_name=dataset_name,
@@ -121,6 +133,7 @@ def main():
         description=f"Test dataset. Resume: `{config.cv_path}`, job descr: ```{config.job_description}```",
     )
     # Run experiments
+    # TODO: dialog to continue
     experiment_results = ls_client.evaluate(
         ls_target,
         data=dataset_name,
