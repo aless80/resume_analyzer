@@ -50,7 +50,7 @@ def main():
         elif query.lower() == "exit":
             break
         else:
-            # Prepare input data for the conversational chain
+            # Chat with the resume
             answer_text = resume_chat_workflow(
                 vector_store=vector_store,
                 job_description=job_description,
