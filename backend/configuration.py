@@ -1,7 +1,7 @@
 import os
 from functools import cache, cached_property
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from langchain_community.cache import SQLiteCache
 from langchain_core.embeddings import Embeddings
@@ -45,6 +45,11 @@ class Configuration(BaseSettings):
     # Input for development purposes
     cv_path: Path = Field(..., description="Full path to CV")
     job_description: str = Field(..., description="Job description")
+
+    # Logging
+    logger_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = Field(
+        "DEBUG", description="Logger level."
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -99,6 +104,13 @@ class Configuration(BaseSettings):
             os.environ["LANGSMITH_TRACING"] = "true"
 
         return self
+
+    @model_validator(mode="after")
+    def validate_logger_level(self):
+        if self.logger_level not in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
+            raise ValueError(f"{self.logger_level}: logging level not valid")
+        return self
+
 
 
 def config_cache(on: bool = True) -> None:
