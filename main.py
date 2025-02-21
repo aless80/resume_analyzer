@@ -22,8 +22,6 @@ def main():
 
     # Load and split the PDF file into documents and chunks
     chunks = create_or_load_chunks(resume_file_path)
-
-    # Button to begin resume analysis
     # Combine all document contents into one text string for analysis
     full_resume = " ".join([doc.page_content for doc in chunks])
 
