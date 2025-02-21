@@ -1,3 +1,4 @@
+import logging.config
 from pathlib import Path
 from typing import List
 
@@ -7,6 +8,7 @@ from langchain_core.vectorstores import VectorStore
 
 from backend.configuration import DB_INDEX, Configuration
 
+logger = logging.getLogger(__name__)
 COLLECTION_NAME = "resume_collection"
 
 
@@ -27,6 +29,7 @@ def create_or_load_vector_store(
     # Store embeddings into the vector store
     vector_index_path = DB_INDEX / vector_index_name
     if not vector_index_path.exists():
+        logger.info("%s: creating storage for vector index", vector_index_path)
         vector_store = Chroma.from_documents(
             documents=chunks,
             embedding=config.embeddings,
@@ -34,6 +37,7 @@ def create_or_load_vector_store(
             persist_directory=str(vector_index_path),
         )
     else:
+        logger.info("%s: loading vector index", vector_index_path)
         vector_store = Chroma(
             collection_name=COLLECTION_NAME,
             embedding_function=config.embeddings,

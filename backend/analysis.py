@@ -1,3 +1,4 @@
+import logging
 from typing import Dict, TypedDict
 
 from langchain_core.prompts import PromptTemplate
@@ -7,8 +8,12 @@ from langgraph.graph import StateGraph
 
 from backend.configuration import Configuration
 
+logger = logging.getLogger(__name__)
+
 
 class State(TypedDict):
+    """State dictionary for the parallel workflow"""
+
     full_resume: str
     job_description: str
     llm: BaseChatOpenAI
@@ -18,8 +23,21 @@ class State(TypedDict):
 
 
 def analyze_resume(
-        full_resume: str, job_description: str, config: Configuration
+    full_resume: str, job_description: str, config: Configuration
 ) -> str:
+    """Analyze the resume against the job description using parallel workflow
+
+    Args:
+        full_resume: Resume text
+        job_description: Job description text
+        config: Configuration object
+
+    Returns:
+        Combined analysis of the resume
+    """
+    logger.info(
+        "Start grammatical and skill analysis of resume using parallel workflow"
+    )
     # Build workflow
     parallel_builder = StateGraph(State)
     # Add nodes
@@ -51,7 +69,15 @@ def analyze_resume(
     return state["combined_output"]
 
 
-def call_llm_skills_analysis(state: State):
+def call_llm_skills_analysis(state: State) -> Dict[str, str]:
+    """Analyze the skills in the resume against the job description
+
+    Args:
+        state: State dictionary for the parallel workflow
+
+    Returns:
+        Skills analysis of the resume
+    """
     # Template for analyzing the resume against the job description
     template_analysis = """
     You are an AI assistant specialized in resume analysis and recruitment. 
@@ -92,7 +118,15 @@ def call_llm_skills_analysis(state: State):
     return {"skills_analysis": response_analysis.content}
 
 
-def call_llm_grammatical_analysis(state: State):
+def call_llm_grammatical_analysis(state: State) -> Dict[str, str]:
+    """Analyze the grammar of the resume
+
+    Args:
+        state: State dictionary for the parallel workflow
+
+    Returns:
+        Grammar analysis of the resume
+    """
     template_grammar = """
     You are an AI assistant specialized in English and Norwegian languages. 
     Detect the language in the given resume, then detect any grammatical error.
@@ -113,7 +147,14 @@ def call_llm_grammatical_analysis(state: State):
 
 
 def aggregator(state: State) -> Dict[str, str]:
-    """Combine the joke and story into a single output"""
+    """Combine the analysis parts into a single output
+
+    Args:
+        state: State dictionary for the parallel workflow
+
+    Returns:
+        Combined output of the analysis
+    """
     combined = state["skills_analysis"]
     combined += "\n\n**Grammar**:\n" f"{state['grammar_analysis']}\n"
 
