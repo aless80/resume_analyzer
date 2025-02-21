@@ -21,20 +21,16 @@ def main():
     resume_file_path = config.cv_path
     job_description = config.job_description
 
-    # Create a temporary directory for the cv file
-    temp_dir = Path("temp")
-    temp_dir.mkdir(parents=True, exist_ok=True)
-
     # Load and split the PDF file into documents and chunks
     chunks = create_or_load_chunks(resume_file_path)
     # Combine all document contents into one text string for analysis
     full_resume = " ".join([doc.page_content for doc in chunks])
 
-    # Analyze the resume
+    ### Analysis of resume
     response_analysis = analyze_resume(full_resume, job_description, config=config)
     print(response_analysis)
 
-    ### Chat
+    ### Chat with resume
     # Create a vector store from the resume chunks
     vector_store = create_or_load_vector_store(
         chunks=chunks,

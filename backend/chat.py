@@ -23,7 +23,6 @@ config = Configuration()
 def create_runnable_resume_chain(
     vector_store: VectorStore,
     job_description: str,
-    config: Configuration,
     similarity_top_k: int = 4,
 ) -> RunnableWithMessageHistory:
     """Create a runnable chain for chatting with the resume and job description
@@ -31,7 +30,7 @@ def create_runnable_resume_chain(
     Args:
         vector_store: Vector store
         job_description: Job description
-        config: Configuration object (optional)
+        similarity_top_k: Number of retrieved documents
 
     Returns:
         Runnable chain
@@ -115,7 +114,7 @@ def create_runnable_resume_chain(
 
 
 class State(TypedDict):
-    """Graph state"""
+    """State dictionary for the evaluator-optimizer workflow"""
 
     vector_store: VectorStore
     job_description: str
@@ -137,11 +136,29 @@ class Feedback(BaseModel):
 evaluator = config.llm.with_structured_output(Feedback)
 
 
-def llm_call_generator(state: State):
-    """Initialize the chain to carry out a conversation, then generate a response"""
+def llm_call_generator(state: State) -> Dict[str, str | int]:
+    """Generate a response using the LLM
+
+    Initialize the chain to carry out a conversation, then invoke it to generate a response
+
+    Args:
+        state: State dictionary
+
+    Returns:
+        Response and attempt number
+    """
+    # Generate a new chain increase the number of retrieved documents for each attempt
     similarity_top_k = config.similarity_top_k + (state["attempt"] - 1) * 2
-    similarity_top_k = min(similarity_top_k, state["vector_store"]._collection.count())
+    vector_store_size = state["vector_store"]._collection.count()
+    similarity_top_k = min(similarity_top_k, vector_store_size)
     if state["attempt"] > 1:
+        prev_similarity_top_k = config.similarity_top_k + (state["attempt"] - 2) * 2
+        if prev_similarity_top_k == similarity_top_k:
+            logger.debug(
+                "similarity_top_k has reached the vector store size %i",
+                vector_store_size,
+            )
+            return {"response": state["response"], "attempt": state["attempt"] + 1}
         print(
             f"Assistant: I will try a new query with {similarity_top_k} retrieved documents"
         )
@@ -149,7 +166,6 @@ def llm_call_generator(state: State):
     conversational_retrieval_chain = create_runnable_resume_chain(
         vector_store=state["vector_store"],
         job_description=state["job_description"],
-        config=config,
         similarity_top_k=similarity_top_k,
     )
     input_data = {
@@ -164,7 +180,17 @@ def llm_call_generator(state: State):
     return {"response": response_obj["answer"], "attempt": state["attempt"] + 1}
 
 
-def llm_call_evaluator(state: State):
+def llm_call_evaluator(
+    state: State,
+) -> Dict[str, str]:
+    """Evaluate the response to a query
+
+    Args:
+        state: State dictionary
+
+    Returns:
+        Evaluation of the response
+    """
     """LLM evaluates the output"""
     # Temporarily turn off cache due to deserialization issues with structured output
     config_cache(on=False)
@@ -178,7 +204,11 @@ def llm_call_evaluator(state: State):
 
 
 def route_response(state: State):
-    """Route back to response generator or end based upon the evaluator"""
+    """Route back to response generator or end based upon the evaluator's output
+
+    Args:
+        state: State dictionary
+    """
     if state.get("evaluation", None) is None:
         raise ValueError("Response from evaluator is missing")
     if state["evaluation"] == "acceptable":
@@ -192,7 +222,7 @@ def route_response(state: State):
         return "Unacceptable"
     else:
         raise ValueError(
-            f"{state['evaluation']}: Unexpected value in state['evaluation']"
+            f"{state['evaluation']}: Unexpected value in State's evaluation field"
         )
 
 
@@ -222,11 +252,14 @@ def resume_chat_workflow(
     # Build workflow
     optimizer_builder = StateGraph(State)
 
-    # Add the nodes
+    # Add nodes
     optimizer_builder.add_node("llm_call_generator", llm_call_generator)
     optimizer_builder.add_node("llm_call_evaluator", llm_call_evaluator)
 
     # Add edges to connect nodes
+    # Start ─┬─ llm_call_generator ─── llm_call_evaluator ─ ─ ─ ─ ─ ─ ─┬─ ⟶ End
+    #        ↑                         (Acceptable, Unacceptable/Stop) ↓
+    #        └─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─┘
     optimizer_builder.add_edge(START, "llm_call_generator")
     optimizer_builder.add_edge("llm_call_generator", "llm_call_evaluator")
     optimizer_builder.add_conditional_edges(
