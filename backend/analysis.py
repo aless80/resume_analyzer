@@ -1,3 +1,4 @@
+import logging
 from typing import Dict, TypedDict
 
 from langchain_core.prompts import PromptTemplate
@@ -6,6 +7,8 @@ from langgraph.constants import END, START
 from langgraph.graph import StateGraph
 
 from backend.configuration import Configuration
+
+logger = logging.getLogger(__name__)
 
 
 class State(TypedDict):
@@ -20,6 +23,9 @@ class State(TypedDict):
 def analyze_resume(
         full_resume: str, job_description: str, config: Configuration
 ) -> str:
+    logger.info(
+        "Start grammatical and skill analysis of resume using parallel workflow"
+    )
     # Build workflow
     parallel_builder = StateGraph(State)
     # Add nodes

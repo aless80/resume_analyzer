@@ -1,16 +1,21 @@
-from pathlib import Path
+import logging
 from typing import Any, Dict
 
+from backend import configure_loggers_levels
 from backend.analysis import analyze_resume
 from backend.chat import resume_chat_workflow
 from backend.configuration import Configuration, config_cache
+from backend.logging_config import LOGGER_CONFIG
 from backend.pdf_ingestion import create_or_load_chunks
 from backend.vector_store import create_or_load_vector_store
+
+logging.config.dictConfig(LOGGER_CONFIG)
 
 
 def main():
 
     config = Configuration()
+    configure_loggers_levels(config.logger_level)
     config_cache()
 
     resume_file_path = config.cv_path

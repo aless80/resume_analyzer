@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict, Literal, TypedDict
 
 from langchain.chains.combine_documents import create_stuff_documents_chain
@@ -15,6 +16,7 @@ from pydantic import BaseModel, Field
 
 from backend.configuration import Configuration, config_cache
 
+logger = logging.getLogger(__name__)
 config = Configuration()
 
 
@@ -143,7 +145,7 @@ def llm_call_generator(state: State):
         print(
             f"Assistant: I will try a new query with {similarity_top_k} retrieved documents"
         )
-
+    logger.debug("Generate a chain with similarity_top_k=%i", similarity_top_k)
     conversational_retrieval_chain = create_runnable_resume_chain(
         vector_store=state["vector_store"],
         job_description=state["job_description"],
@@ -180,10 +182,13 @@ def route_response(state: State):
     if state.get("evaluation", None) is None:
         raise ValueError("Response from evaluator is missing")
     if state["evaluation"] == "acceptable":
+        logger.debug("Acceptable response")
         return "Acceptable"
     elif state["evaluation"] == "unacceptable":
         if state["attempt"] > 3:
+            logger.debug("Stop: maximum iterations reached")
             return "Stop"
+        logger.debug("Unacceptable response: ```%s```", state["response"])
         return "Unacceptable"
     else:
         raise ValueError(
@@ -213,6 +218,7 @@ def resume_chat_workflow(
     Returns:
         Response string
     """
+    logger.info("Start the resume chat using the evaluator-optimizer workflow")
     # Build workflow
     optimizer_builder = StateGraph(State)
 
