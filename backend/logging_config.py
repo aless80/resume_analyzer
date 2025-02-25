@@ -18,6 +18,11 @@ LOGGER_CONFIG = {
             "handlers": ["console"],
             "propagate": False,  # Do not inherit from parent (root) logger
         },
+        "evaluation": {
+            "level": "DEBUG",
+            "handlers": ["console"],
+            "propagate": False,  # Do not inherit from parent (root) logger
+        },
     },
     "root": {
         "handlers": ["muffle"],

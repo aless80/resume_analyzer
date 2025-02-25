@@ -1,3 +1,5 @@
+import csv
+import logging
 from functools import partial
 from typing import Annotated, Dict, TypedDict
 
@@ -6,12 +8,16 @@ from langsmith.schemas import Dataset
 
 from backend.chat import resume_chat_workflow
 from backend.configuration import Configuration, config_cache
+from backend.logging_config import LOGGER_CONFIG
 from backend.pdf_ingestion import create_or_load_chunks
 from backend.vector_store import create_or_load_vector_store
 
 config = Configuration()
 config_cache()
 
+logging.config.dictConfig(LOGGER_CONFIG)
+
+logger = logging.getLogger("evaluation")
 openai_client = config.llm
 
 # Define dataset with test cases
@@ -54,10 +60,10 @@ def add_test_cases(
 ) -> Dataset:
     # Check if dataset already exist
     if langsmith_client.has_dataset(dataset_name=dataset_name):
-        print("Loading dataset from LangSmith")
+        logger.debug("Loading dataset from LangSmith")
         dataset = langsmith_client.read_dataset(dataset_name=dataset_name)
     else:
-        print("Uploading dataset to LangSmith")
+        logger.info("Uploading dataset to LangSmith")
         dataset = langsmith_client.create_dataset(
             dataset_name=dataset_name, description=description
         )
@@ -69,7 +75,7 @@ def add_test_cases(
     counter = 0
     for i, input in enumerate(inputs):
         if input not in existing_inputs:
-            print(f"Adding example number: {counter}")
+            logger.info("Adding example number %d", counter)
             counter += 1
             output = outputs[i]
             langsmith_client.create_example(
@@ -77,7 +83,7 @@ def add_test_cases(
                 outputs=output,
                 dataset_id=dataset.id,
             )
-
+    logger.info("Added %d examples to the dataset", counter)
     return dataset
 
 
