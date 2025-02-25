@@ -100,7 +100,7 @@ def call_llm_skills_analysis(state: State) -> Dict[str, str]:
     Hard skills: comment on most important hard skills from the job description that are missing in the resume
     Soft skills: comment on most important soft skills from the job description that are missing in the resume
     Other tips
-    Notify if the languages of resume and job description are not the same.
+    Notify if the languages of resume and job description are not the same, otherwise skip this part. 
     
     Resume: ```{resume}```
     Job Description: ```{job_description}```
