@@ -1,7 +1,7 @@
 import os
 from functools import cache, cached_property
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 
 from langchain_community.cache import SQLiteCache
 from langchain_core.embeddings import Embeddings
@@ -49,6 +49,12 @@ class Configuration(BaseSettings):
     # Logging
     logger_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = Field(
         "DEBUG", description="Logger level."
+    )
+
+    # Evaluation
+    langsmith_dataset: str = Field("", description="LangSmith dataset name")
+    langsmith_tests_csv: Optional[Path] = Field(
+        None, description="csv file with test cases for LangSmith"
     )
 
     @model_validator(mode="before")
