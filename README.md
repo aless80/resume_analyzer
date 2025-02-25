@@ -22,7 +22,7 @@ Install two Linux packages, then use pip:
 apt-get install poppler-utils tesseract-ocr
 pip install -r requirements.txt
 ```
-Create and setup a `.env` file from a template:
+Create and set up a `.env` file from a template:
 ```
 cp .env_mock .env
 ```
@@ -31,4 +31,10 @@ Run with python or streamlit:
 ```
 python main.py
 streamlit run app.py
+```
+
+### Evaluating the analysis task
+Set up the `LANGSMITH_*` variables in the `.env` file as demonstrated in `.env_mock`, then run:
+```bash
+python evaluation.py 
 ```
