@@ -19,6 +19,7 @@ class State(TypedDict):
     llm: BaseChatOpenAI
     skills_analysis: str
     grammar_analysis: str
+    style_analysis: str
     combined_output: str
 
 
@@ -42,17 +43,21 @@ def analyze_resume(
     parallel_builder = StateGraph(State)
     # Add nodes
     parallel_builder.add_node("call_llm_skills_analysis", call_llm_skills_analysis)
+    parallel_builder.add_node("call_llm_style_analysis", call_llm_style_analysis)
     parallel_builder.add_node(
         "call_llm_grammatical_analysis", call_llm_grammatical_analysis
     )
     parallel_builder.add_node("aggregator", aggregator)
 
     # Add edges to connect nodes
-    # Start ─┬─ call_llm_grammatical_analysis ───────────────────────┬── aggregator ── End
-    #        └─ call_llm_skills_analysis ─────── aggregator_skills ──┘
+    # Start ─┬──── call_llm_grammatical_analysis ───────────────────────┬── aggregator ── End
+    #        ├──── call_llm_style_analysis  ────────────────────────────┤
+    #        └ ─ ─ call_llm_skills_analysis ────────────────────────────┘
     parallel_builder.add_edge(START, "call_llm_grammatical_analysis")
+    parallel_builder.add_edge(START, "call_llm_style_analysis")
     parallel_builder.add_edge(START, "call_llm_skills_analysis")
     parallel_builder.add_edge("call_llm_skills_analysis", "aggregator")
+    parallel_builder.add_edge("call_llm_style_analysis", "aggregator")
     parallel_builder.add_edge("call_llm_grammatical_analysis", "aggregator")
     parallel_builder.add_edge("aggregator", END)
     parallel_workflow = parallel_builder.compile()
@@ -132,7 +137,9 @@ def call_llm_grammatical_analysis(state: State) -> Dict[str, str]:
     Detect the language in the given resume, then detect any grammatical error.
     
     Example Response Structure:
-    
+    * "optimzing" should be "optimizing"
+    * "Alessandro do a great job" should be "Alessandro does a great job"
+    OR
     The resume is written in English/Norwegian and I could not detect significant grammatical errors.
 
     Resume: ```{resume}```
@@ -146,6 +153,42 @@ def call_llm_grammatical_analysis(state: State) -> Dict[str, str]:
     return {"grammar_analysis": response_grammar.content}
 
 
+def call_llm_style_analysis(state: State) -> Dict[str, str]:
+    """Analyze the grammar of the resume
+
+    Args:
+        state: State dictionary for the parallel workflow
+
+    Returns:
+        Stylistic analysis of the resume
+    """
+    template_style = """
+    You are an AI assistant specialized in English and Norwegian languages. 
+    Detect the language in the given resume, then suggest any stylistic improvements.
+    Focus on:    
+    * Action Verbs: Begin resume section with strong action verbs like: managed, created, developed, 
+      improved, or enhanced.
+    * Active Formulation: Instead of saying "responsible for," say "led," "oversaw," or "directed."
+    * Avoid Jargon: Use clear, understandable language to ensure your message is conveyed 
+      effectively to all readers.
+    * Cut Redundancy: Remove unnecessary words and phrases to keep your CV concise and impactful.
+    
+    Do not comment on formatting, spelling, or punctuation.
+
+    Example Response Structure:
+    * Use action verbs: "Alessandro managed" instead of "was responsible for managing".
+    * Use active formulation: "led a project" instead "was responsible for development of a project"
+    * Cut redundancy: expertise in Python is repeated two times in the same section. 
+
+    Resume: ```{resume}```
+    """
+    prompt_style = PromptTemplate(input_variables=["resume"], template=template_style)
+    chain_grammar = prompt_style | state["llm"]
+    response_style = chain_grammar.invoke({"resume": state["full_resume"]})
+
+    return {"style_analysis": response_style.content}
+
+
 def aggregator(state: State) -> Dict[str, str]:
     """Combine the analysis parts into a single output
 
@@ -157,5 +200,6 @@ def aggregator(state: State) -> Dict[str, str]:
     """
     combined = state["skills_analysis"]
     combined += "\n\n**Grammar**:\n" f"{state['grammar_analysis']}\n"
+    combined += "\n\n**Style**:\n" f"{state['style_analysis']}\n"
 
     return {"combined_output": combined}
