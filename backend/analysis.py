@@ -55,7 +55,9 @@ def analyze_resume(
     #        └ ─ ─ call_llm_skills_analysis ────────────────────────────┘
     parallel_builder.add_edge(START, "call_llm_grammatical_analysis")
     parallel_builder.add_edge(START, "call_llm_style_analysis")
-    parallel_builder.add_edge(START, "call_llm_skills_analysis")
+    parallel_builder.add_conditional_edges(
+        START, check_job_description, {True: "call_llm_skills_analysis", False: END}
+    )
     parallel_builder.add_edge("call_llm_skills_analysis", "aggregator")
     parallel_builder.add_edge("call_llm_style_analysis", "aggregator")
     parallel_builder.add_edge("call_llm_grammatical_analysis", "aggregator")
@@ -72,6 +74,20 @@ def analyze_resume(
     )
 
     return state["combined_output"]
+
+
+def check_job_description(state: State) -> bool:
+    """Gate function to check if the job description is present
+
+    Args:
+        state: State dictionary for the parallel workflow
+
+    Returns:
+        Boolean indicating if the job description is present
+    """
+    if state["job_description"] == "":
+        return False
+    return True
 
 
 def call_llm_skills_analysis(state: State) -> Dict[str, str]:
@@ -198,7 +214,9 @@ def aggregator(state: State) -> Dict[str, str]:
     Returns:
         Combined output of the analysis
     """
-    combined = state["skills_analysis"]
+    combined = ""
+    if "skills_analysis" in state:
+        combined += state["skills_analysis"]
     combined += "\n\n**Grammar**:\n" f"{state['grammar_analysis']}\n"
     combined += "\n\n**Style**:\n" f"{state['style_analysis']}\n"
 

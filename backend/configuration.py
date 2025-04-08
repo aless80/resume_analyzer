@@ -74,8 +74,8 @@ class Configuration(BaseSettings):
     @model_validator(mode="before")
     @classmethod
     def validate_job_description(cls, data: Any) -> Any:
-        job_description = data.get("job_description", "")
-        if job_description == "":
+        job_description = data.get("job_description", "undefined")
+        if job_description == "undefined":
             data["job_description"] = input("Type the job description")
 
         return data
@@ -116,7 +116,6 @@ class Configuration(BaseSettings):
         if self.logger_level not in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]:
             raise ValueError(f"{self.logger_level}: logging level not valid")
         return self
-
 
 
 def config_cache(on: bool = True) -> None:
