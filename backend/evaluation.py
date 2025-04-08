@@ -10,7 +10,7 @@ from langsmith.schemas import Dataset
 from backend.chat import resume_chat_workflow
 from backend.configuration import Configuration, config_cache
 from backend.logging_config import LOGGER_CONFIG
-from backend.pdf_ingestion import create_or_load_chunks
+from backend.pdf_ingestion import parse_from_unstructured
 from backend.vector_store import create_or_load_vector_store
 
 config = Configuration()
@@ -26,7 +26,10 @@ description_template = "Resume: `{}`, job descr: ```{}```"
 
 def chat_with_resume(resume_file_path, job_description, query):
     messages = []
-    chunks = create_or_load_chunks(resume_file_path)
+    # chunks = create_or_load_chunks(resume_file_path)
+    # Create chunks, do not load from pickle
+    chunks = parse_from_unstructured(resume_file_path)
+
     # Create a vector store from the resume chunks
     vector_store = create_or_load_vector_store(
         chunks=chunks,

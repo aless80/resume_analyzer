@@ -5,7 +5,7 @@ import streamlit as st
 
 from backend.analysis import analyze_resume
 from backend.configuration import Configuration
-from backend.pdf_ingestion import create_or_load_chunks
+from backend.pdf_ingestion import parse_from_unstructured
 from backend.vector_store import create_or_load_vector_store
 
 
@@ -49,7 +49,9 @@ def render_main_app(config: Configuration):
 
             # Load and split the PDF file into documents and chunks
             resume_file_path = Path("temp") / resume_file.name
-            chunks = create_or_load_chunks(resume_file_path)
+            # chunks = create_or_load_chunks(resume_file_path)
+            # Create chunks, do not load from pickle
+            chunks = parse_from_unstructured(resume_file_path)
 
             # Create a vector store from the resume chunks
             vector_store = create_or_load_vector_store(

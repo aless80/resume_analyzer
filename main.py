@@ -6,7 +6,7 @@ from backend.analysis import analyze_resume
 from backend.chat import resume_chat_workflow
 from backend.configuration import Configuration, config_cache
 from backend.logging_config import LOGGER_CONFIG
-from backend.pdf_ingestion import create_or_load_chunks
+from backend.pdf_ingestion import parse_from_unstructured
 from backend.vector_store import create_or_load_vector_store
 
 logging.config.dictConfig(LOGGER_CONFIG)
@@ -22,7 +22,10 @@ def main():
     job_description = config.job_description
 
     # Load and split the PDF file into documents and chunks
-    chunks = create_or_load_chunks(resume_file_path)
+    # chunks = create_or_load_chunks(resume_file_path)
+    # Create chunks, do not load from pickle
+    chunks = parse_from_unstructured(resume_file_path)
+
     # Combine all document contents into one text string for analysis
     full_resume = " ".join([doc.page_content for doc in chunks])
 
