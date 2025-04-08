@@ -16,7 +16,7 @@ def main():
 
     config = Configuration()
     configure_loggers_levels(config.logger_level)
-    config_cache()
+    config_cache(on=True)
 
     resume_file_path = config.cv_path
     job_description = config.job_description
