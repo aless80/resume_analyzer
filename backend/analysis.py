@@ -36,9 +36,7 @@ def analyze_resume(
     Returns:
         Combined analysis of the resume
     """
-    logger.info(
-        "Start grammatical and skill analysis of resume using parallel workflow"
-    )
+    logger.info("Start analysis of resume using a parallel workflow")
     # Build workflow
     parallel_builder = StateGraph(State)
     # Add nodes
@@ -187,7 +185,8 @@ def call_llm_style_analysis(state: State) -> Dict[str, str]:
     * Active Formulation: Instead of saying "responsible for," say "led," "oversaw," or "directed."
     * Avoid Jargon: Use clear, understandable language to ensure your message is conveyed 
       effectively to all readers.
-    * Cut Redundancy: Remove unnecessary words and phrases to keep your CV concise and impactful.
+    * Cut Redundancy: Remove unnecessary words and phrases to keep your CV concise and impactful. 
+      It is ok to repeat technical skills in the CV.
     
     Do not comment on formatting, spelling, or punctuation.
 
