@@ -1,3 +1,4 @@
+# NB: set the package names (e.g. `backend`) under "loggers"
 LOGGER_CONFIG = {
     "version": 1,
     "disable_existing_loggers": True,
